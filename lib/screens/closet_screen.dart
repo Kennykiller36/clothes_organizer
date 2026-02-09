@@ -16,6 +16,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
       type: ClothingType.top,
       colors: ['black'],
       styles: ['casual', 'street'],
+      imageBytes: null,
     ),
     ClothingItem(
       id: '2',
@@ -23,6 +24,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
       type: ClothingType.bottom,
       colors: ['blue'],
       styles: ['casual'],
+      imageBytes: null,
     ),
     ClothingItem(
       id: '3',
@@ -30,6 +32,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
       type: ClothingType.shoes,
       colors: ['white'],
       styles: ['casual', 'street'],
+      imageBytes: null,
     ),
   ];
 
