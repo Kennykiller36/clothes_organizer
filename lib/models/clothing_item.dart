@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 enum ClothingType { top, bottom, shoes, outerwear }
@@ -18,4 +19,26 @@ class ClothingItem {
     required this.styles,
     this.imageBytes,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type.toString().split('.').last,
+      'colors': colors,
+      'styles': styles,
+      'imageBytes': imageBytes != null ? base64Encode(imageBytes!) : null,
+    };
+  }
+
+  factory ClothingItem.fromJson(Map<String, dynamic> json) {
+    return ClothingItem(
+      id: json['id'],
+      name: json['name'],
+      type: ClothingType.values.firstWhere((e) => e.toString().split('.').last == json['type']),
+      colors: List<String>.from(json['colors']),
+      styles: List<String>.from(json['styles']),
+      imageBytes: json['imageBytes'] != null ? base64Decode(json['imageBytes']) : null,
+    );
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import '../services/outfit_generator.dart';
+import '../services/storage_service.dart';
 
 import 'generate_outfit_form.dart';
 import 'add_clothing_form.dart';
@@ -12,26 +13,22 @@ class ClosetScreen extends StatefulWidget {
 }
 
 class _ClosetScreenState extends State<ClosetScreen> {
-  final List<ClothingItem> closet = [
-    ClothingItem(
-      id: '1',
-      name: 'Black Hoodie',
-      type: ClothingType.top,
-      colors: ['black'],
-      styles: ['casual', 'street'],
-      imageBytes: null,
-    ),
-    ClothingItem(
-      id: '2',
-      name: 'Blue Jeans',
-      type: ClothingType.bottom,
-      colors: ['blue'],
-      styles: ['casual'],
-      imageBytes: null,
-    ),
-  ];
+  List<ClothingItem> closet = [];
 
   Map<ClothingType, ClothingItem?> outfit = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCloset();
+  }
+
+  Future<void> _loadCloset() async {
+    final loadedCloset = await StorageService.loadCloset();
+    setState(() {
+      closet = loadedCloset;
+    });
+  }
 
   void generateOutfit() {
     setState(() {
@@ -39,10 +36,11 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
-  void addClothing(ClothingItem item) {
+  void addClothing(ClothingItem item) async {
     setState(() {
       closet.add(item);
     });
+    await StorageService.saveCloset(closet);
   }
 
   @override
