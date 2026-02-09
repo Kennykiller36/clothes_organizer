@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../models/clothing_item.dart';
 import '../services/outfit_generator.dart';
-import 'add_clothing_dialog.dart';
+
+import 'generate_outfit_form.dart';
+import 'add_clothing_form.dart';
+import 'closet_list_form.dart';
 
 class ClosetScreen extends StatefulWidget {
   @override
@@ -26,14 +29,6 @@ class _ClosetScreenState extends State<ClosetScreen> {
       styles: ['casual'],
       imageBytes: null,
     ),
-    ClothingItem(
-      id: '3',
-      name: 'Sneakers',
-      type: ClothingType.shoes,
-      colors: ['white'],
-      styles: ['casual', 'street'],
-      imageBytes: null,
-    ),
   ];
 
   Map<ClothingType, ClothingItem?> outfit = {};
@@ -44,71 +39,39 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
-  void openAddClothingDialog() async {
-    final ClothingItem? newItem = await showDialog<ClothingItem>(
-      context: context,
-      builder: (_) => AddClothingDialog(),
-    );
-
-    if (newItem != null) {
-      setState(() {
-        closet.add(newItem);
-      });
-    }
+  void addClothing(ClothingItem item) {
+    setState(() {
+      closet.add(item);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('My Closet')),
-
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Closet'),
+          bottom: const TabBar(
+            tabs: [
+              Tab(icon: Icon(Icons.auto_awesome), text: 'Outfit'),
+              Tab(icon: Icon(Icons.add), text: 'Add Clothes'),
+              Tab(icon: Icon(Icons.list), text: 'Closet'),
+            ],
+          ),
+        ),
+        body: TabBarView(
           children: [
-            ElevatedButton(
-              onPressed: generateOutfit,
-              child: const Text('Generate Outfit'),
+            GenerateOutfitForm(
+              closet: closet,
+              outfit: outfit,
+              onGenerate: generateOutfit,
             ),
-
-            const SizedBox(height: 10),
-
-            ElevatedButton(
-              onPressed: openAddClothingDialog,
-              child: const Text('Add Clothing'),
+            AddClothingForm(
+              onAdd: addClothing,
             ),
-
-            const SizedBox(height: 20),
-
-            const Text(
-              'Generated Outfit:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            ...outfit.entries.map((e) {
-              if (e.value == null) return const SizedBox();
-              return Text('${e.key.name}: ${e.value!.name}');
-            }),
-
-            const Divider(height: 32),
-
-            const Text(
-              'My Clothes:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-
-            Expanded(
-              child: ListView.builder(
-                itemCount: closet.length,
-                itemBuilder: (context, index) {
-                  final item = closet[index];
-                  return ListTile(
-                    title: Text(item.name),
-                    subtitle: Text(item.type.name),
-                  );
-                },
-              ),
+            ClosetListForm(
+              closet: closet,
             ),
           ],
         ),
