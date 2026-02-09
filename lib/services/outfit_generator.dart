@@ -9,9 +9,15 @@ class OutfitGenerator {
     final random = Random();
 
     ClothingItem? pick(ClothingType type) {
-      final filtered = clothes.where((c) =>
+      // First, try to pick items that match the style
+      var filtered = clothes.where((c) =>
         c.type == type && c.styles.contains(style)
       ).toList();
+
+      // If no items match the style, pick any item of that type
+      if (filtered.isEmpty) {
+        filtered = clothes.where((c) => c.type == type).toList();
+      }
 
       if (filtered.isEmpty) return null;
       return filtered[random.nextInt(filtered.length)];
