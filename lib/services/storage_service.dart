@@ -1,35 +1,45 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_html/html.dart' as html;
 import '../models/clothing_item.dart';
 
 class StorageService {
-  static const String _closetFileName = 'closet.json';
-
-  static Future<String> _getFilePath() async {
-    final directory = await getApplicationDocumentsDirectory();
-    return '${directory.path}/$_closetFileName';
-  }
+  static const String _closetKey = 'closet';
 
   static Future<void> saveCloset(List<ClothingItem> closet) async {
-    final filePath = await _getFilePath();
-    final file = File(filePath);
     final jsonList = closet.map((item) => item.toJson()).toList();
     final jsonString = jsonEncode(jsonList);
-    await file.writeAsString(jsonString);
+
+    if (kIsWeb) {
+      html.window.localStorage[_closetKey] = jsonString;
+    } else {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_closetKey, jsonString);
+    }
+    print('Closet saved with ${closet.length} items');
   }
 
   static Future<List<ClothingItem>> loadCloset() async {
     try {
-      final filePath = await _getFilePath();
-      final file = File(filePath);
-      if (await file.exists()) {
-        final jsonString = await file.readAsString();
+      String? jsonString;
+      if (kIsWeb) {
+        jsonString = html.window.localStorage[_closetKey];
+      } else {
+        final prefs = await SharedPreferences.getInstance();
+        jsonString = prefs.getString(_closetKey);
+      }
+
+      if (jsonString != null) {
         final jsonList = jsonDecode(jsonString) as List<dynamic>;
-        return jsonList.map((json) => ClothingItem.fromJson(json)).toList();
+        final items = jsonList.map((json) => ClothingItem.fromJson(json)).toList();
+        print('Closet loaded with ${items.length} items');
+        return items;
+      } else {
+        print('No closet data found');
       }
     } catch (e) {
-      // Handle errors, e.g., file not found or corrupted
+      // Handle errors, e.g., corrupted data
       print('Error loading closet: $e');
     }
     return [];
