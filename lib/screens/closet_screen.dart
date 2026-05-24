@@ -14,8 +14,9 @@ class ClosetScreen extends StatefulWidget {
 
 class _ClosetScreenState extends State<ClosetScreen> {
   List<ClothingItem> closet = [];
-
   Map<ClothingType, ClothingItem?> outfit = {};
+  bool _isLoading = true;
+  String? _loadError;
 
   @override
   void initState() {
@@ -24,10 +25,28 @@ class _ClosetScreenState extends State<ClosetScreen> {
   }
 
   Future<void> _loadCloset() async {
-    final loadedCloset = await StorageService.loadCloset();
     setState(() {
-      closet = loadedCloset;
+      _isLoading = true;
+      _loadError = null;
     });
+
+    try {
+      final loadedCloset = await StorageService.loadCloset();
+      if (!mounted) return;
+      setState(() {
+        closet = loadedCloset;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _loadError =
+            'Could not reach the server.\n'
+            'Start the API after reboot, then tap Retry.\n\n'
+            'Run: .\\start-dev.ps1';
+      });
+    }
   }
 
   void generateOutfit() {
@@ -36,15 +55,57 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
-  void addClothing(ClothingItem item) async {
-    setState(() {
-      closet.add(item);
-    });
-    await StorageService.saveCloset(closet);
+  Future<void> addClothing(ClothingItem item) async {
+    setState(() => closet.add(item));
+
+    try {
+      await StorageService.saveCloset(closet);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => closet.remove(item));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Could not save clothing: $e')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_loadError != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('My Closet')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
+                const SizedBox(height: 16),
+                Text(
+                  _loadError!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: _loadCloset,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
