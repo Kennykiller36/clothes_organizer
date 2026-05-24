@@ -18,7 +18,7 @@ function rowToItem(row) {
     type: row.type,
     colors: row.colors,
     styles: row.styles,
-    imageBytes: row.image_base64,
+    hasImage: Boolean(row.has_image),
   };
 }
 
@@ -34,11 +34,27 @@ app.get('/health', async (_req, res) => {
 app.get('/closet', async (_req, res) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, type, colors, styles, image_base64
+      `SELECT id, name, type, colors, styles,
+              (image_base64 IS NOT NULL AND image_base64 <> '') AS has_image
        FROM clothing_items
        ORDER BY created_at`
     );
-    res.json(rows.map(rowToItem));
+    res.json(rows.map((row) => rowToItem(row)));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/closet/items/:id/image', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      `SELECT image_base64 FROM clothing_items WHERE id = $1`,
+      [req.params.id]
+    );
+    if (!rows[0]?.image_base64) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    res.json({ imageBytes: rows[0].image_base64 });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -66,43 +82,6 @@ app.post('/closet/items', async (req, res) => {
     res.status(201).send();
   } catch (error) {
     res.status(500).json({ error: error.message });
-  }
-});
-
-app.put('/closet', async (req, res) => {
-  const items = req.body;
-
-  if (!Array.isArray(items)) {
-    return res.status(400).json({ error: 'Body must be an array of clothing items' });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-    await client.query('DELETE FROM clothing_items');
-
-    for (const item of items) {
-      await client.query(
-        `INSERT INTO clothing_items (id, name, type, colors, styles, image_base64)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          item.id,
-          item.name,
-          item.type,
-          item.colors ?? [],
-          item.styles ?? [],
-          item.imageBytes ?? null,
-        ]
-      );
-    }
-
-    await client.query('COMMIT');
-    res.send();
-  } catch (error) {
-    await client.query('ROLLBACK');
-    res.status(500).json({ error: error.message });
-  } finally {
-    client.release();
   }
 });
 

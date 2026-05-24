@@ -1,10 +1,10 @@
+import 'api_config_platform.dart'
+    if (dart.library.html) 'api_config_platform_web.dart';
+
 class ApiConfig {
-  /// Override at build time for Android emulator:
-  /// flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:3000',
-  );
+  /// Physical phone: use your PC LAN IP, e.g.
+  /// flutter run --dart-define=API_BASE_URL=http://192.168.1.10:3000
+  static String get baseUrl => platformBaseUrl();
 
   static Uri closetUri() => Uri.parse('$baseUrl/closet');
 }

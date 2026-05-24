@@ -37,6 +37,7 @@ class _ClosetScreenState extends State<ClosetScreen> {
         closet = loadedCloset;
         _isLoading = false;
       });
+      _loadImagesForCloset();
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -55,14 +56,32 @@ class _ClosetScreenState extends State<ClosetScreen> {
     });
   }
 
+  Future<void> _loadImagesForCloset() async {
+    for (var i = 0; i < closet.length; i++) {
+      final item = closet[i];
+      if (!item.hasImage || item.imageBytes != null) continue;
+
+      try {
+        final bytes = await StorageService.loadItemImage(item.id);
+        if (!mounted || bytes == null) continue;
+        setState(() {
+          closet[i] = item.copyWith(imageBytes: bytes);
+        });
+      } catch (_) {
+        // Keep hanger icon if a single image fails.
+      }
+    }
+  }
+
   Future<void> addClothing(ClothingItem item) async {
-    setState(() => closet.add(item));
+    final itemToSave = item.copyWith(hasImage: item.imageBytes != null);
 
     try {
-      await StorageService.saveCloset(closet);
+      await StorageService.saveItem(itemToSave);
+      if (!mounted) return;
+      setState(() => closet.add(itemToSave));
     } catch (e) {
       if (!mounted) return;
-      setState(() => closet.remove(item));
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Could not save clothing: $e')),
       );

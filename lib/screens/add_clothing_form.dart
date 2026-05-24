@@ -3,6 +3,8 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:typed_data';
 import '../models/clothing_item.dart';
 
+const int _maxImageEdge = 1024;
+
 class AddClothingForm extends StatefulWidget {
   final void Function(ClothingItem item) onAdd;
 
@@ -21,7 +23,12 @@ class _AddClothingFormState extends State<AddClothingForm> {
 
   Future<void> pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: _maxImageEdge.toDouble(),
+      maxHeight: _maxImageEdge.toDouble(),
+      imageQuality: 85,
+    );
     if (image != null) {
       final bytes = await image.readAsBytes();
       setState(() {
@@ -47,6 +54,7 @@ class _AddClothingFormState extends State<AddClothingForm> {
           .map((e) => e.trim())
           .where((e) => e.isNotEmpty)
           .toList(),
+      hasImage: imageBytes != null,
       imageBytes: imageBytes,
     );
 
@@ -149,6 +157,10 @@ class _AddClothingFormState extends State<AddClothingForm> {
                   height: 120,
                   width: 120,
                   fit: BoxFit.cover,
+                  cacheWidth: 256,
+                  cacheHeight: 256,
+                  errorBuilder: (_, __, ___) =>
+                      const Icon(Icons.broken_image, size: 48),
                 ),
               ),
             ),
